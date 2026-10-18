@@ -1,5 +1,7 @@
 # Mandarin Zest · Writing practice sheet maker
 
+Used on: https://www.mandarinzest.com/character-practice-sheets-generator
+
 Type a character → ready-to-print A4 PDF: character with pinyin, meaning and radical, stroke order,
 tracing rows and empty 田 / 米 / plain grids. The PDF is made in the visitor's browser.
 

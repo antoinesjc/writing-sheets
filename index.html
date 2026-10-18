@@ -233,7 +233,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 /* ── Settings ─────────────────────────────────────────────────── */
-const API_URL   = "PASTE_APPS_SCRIPT_URL_HERE";            // Google Apps Script web app (apps-script/writing-sheets.gs)
+const API_URL   = "https://script.google.com/macros/s/AKfycbzhl1j81M_AtNbuRa1uKOtIPAuinm-xG7ppom99JmWjA7VcZSs2LiOeDUS3-3QtuQn7/exec";            // Google Apps Script web app (apps-script/writing-sheets.gs)
 const PAY_URL   = "https://buy.stripe.com/cNi4gz4Olf1H8LK3hP6oo0n";        // Stripe Payment Link, US$9 one time
 const FREE_LIMIT = 3;                                       // keep in sync with the Apps Script
 const MAX_PAGES = 30;                                       // max characters in one PDF (unlimited users)
@@ -355,7 +355,7 @@ function drawSheet(ctx, c, data, info, scale) {
   }
   // footer
   ctx.fillStyle = "#9a8b82"; ctx.font = font(600, 24);
-  ctx.fillText("mandarinzest.com · Writing practice", M, H - 60);
+  ctx.fillText("mandarinzest.com/character-practice-sheets-generator", M, H - 60);
   ctx.textAlign = "right"; ctx.fillText("Stroke data: Make Me a Hanzi", W - M, H - 60); ctx.textAlign = "left";
   ctx.restore();
 }
