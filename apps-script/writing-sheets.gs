@@ -11,11 +11,16 @@
  *                    Checkout Sessions, Customers, Subscriptions. Nothing else.
  *   PAYMENT_LINK_ID  optional, the plink_… id of the $9 Payment Link (makes payment checks faster)
  *
+ * Club members you add by hand: put their emails in column A of a tab named "Club list"
+ * (one per line, header optional). They get unlimited even without a Stripe subscription.
+ * To give someone lifetime access by hand, set their Plan to "paid" in the Users tab.
+ *
  * Deploy → New deployment → Web app → Execute as: Me → Who has access: Anyone.
  */
 
 var FREE_LIMIT = 3;                    // free sheets per person
 var SHEET_NAME = 'Users';
+var CLUB_LIST = 'Club list';             // optional tab: emails in column A get Club access
 var HEAD = ['Email', 'Created', 'Plan', 'Used', 'Consent', 'Paid at', 'Stripe session', 'Club checked', 'Last used', 'Code', 'Code expires', 'Key'];
 var C = {}; HEAD.forEach(function (h, i) { C[h] = i; });
 var CLUB_RECHECK_HOURS = 24;
@@ -61,8 +66,12 @@ function handle(req) {
     var ok = v[C['Code']] && String(v[C['Code']]) === String(req.code || '').trim() && new Date(v[C['Code expires']]) > new Date();
     if (!ok) return { error: 'code' };
     sh.getRange(row, C['Code'] + 1, 1, 2).setValues([['', '']]);
+    var k = v[C['Key']];
+    if (!k) { k = newKey(); sh.getRange(row, C['Key'] + 1).setValue(k); }   // row added by hand
+    if (!v[C['Plan']]) sh.getRange(row, C['Plan'] + 1).setValue('free');
+    if (v[C['Used']] === '') sh.getRange(row, C['Used'] + 1).setValue(0);
     refreshClub(sh, row, email, true);
-    return state(sh, row, { key: v[C['Key']] });
+    return state(sh, row, { key: k });
   }
 
   // Everything else needs the device key we gave them.
@@ -106,7 +115,7 @@ function authed(sh, row, key) { return key && String(sh.getRange(row, C['Key'] +
 function newKey() { return Utilities.getUuid().replace(/-/g, ''); }
 function state(sh, row, extra) {
   var r = sh.getRange(row, 1, 1, HEAD.length).getValues()[0];
-  var plan = r[C['Plan']], used = Number(r[C['Used']]) || 0;
+  var plan = r[C['Plan']] || 'free', used = Number(r[C['Used']]) || 0;
   var out = { plan: plan, used: used, limit: FREE_LIMIT, left: plan === 'free' ? Math.max(0, FREE_LIMIT - used) : null };
   for (var k in (extra || {})) out[k] = extra[k];
   return out;
@@ -155,9 +164,18 @@ function checkPayment(sh, row, email) {
   return true;
 }
 // Club: any active (or trialing) subscription under this email.
+function inClubList(email) {
+  var t = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CLUB_LIST);
+  if (!t || t.getLastRow() < 1) return false;
+  return t.getRange(1, 1, t.getLastRow(), 1).getValues().some(function (r) { return String(r[0]).trim().toLowerCase() === email; });
+}
 function refreshClub(sh, row, email, force) {
   var r = sh.getRange(row, 1, 1, HEAD.length).getValues()[0];
   if (r[C['Plan']] === 'paid') return;
+  if (inClubList(email)) {                              // added by hand: always Club
+    if (r[C['Plan']] !== 'club') sh.getRange(row, C['Plan'] + 1).setValue('club');
+    return;
+  }
   var last = r[C['Club checked']] ? new Date(r[C['Club checked']]) : null;
   if (!force && last && (Date.now() - last.getTime()) < CLUB_RECHECK_HOURS * 3600 * 1000) return;
   var customers = stripe('customers?limit=10&email=' + encodeURIComponent(email));

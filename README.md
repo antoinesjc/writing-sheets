@@ -18,7 +18,7 @@ tracing rows and empty 田 / 米 / plain grids. The PDF is made in the visitor's
 1. First download asks for an email → the Google Sheet ("Users" tab) creates the person and a private device key.
 2. After 3 sheets, "Unlock" opens the Stripe Payment Link in a new tab, with the email pre-filled and the device key as `client_reference_id`.
 3. The tool checks every 5 seconds; the Apps Script asks Stripe for a paid checkout with that key → plan = `paid` (for life).
-4. Club members: the Apps Script looks up the email in Stripe and finds an active subscription → plan = `club` (re-checked daily, so it ends if they leave the Club).
+4. Club members: emails listed in the "Club list" tab (column A) always get Club access. Otherwise the Apps Script looks up the email in Stripe and finds an active subscription → plan = `club` (re-checked daily, so it ends if they leave the Club).
 5. Same email on a new device (or a Club member's first visit) → a 6-digit code is emailed to prove it's theirs.
 
 The Stripe key lives only in the Apps Script's Script properties (restricted key, read-only: Checkout Sessions, Customers, Subscriptions).
