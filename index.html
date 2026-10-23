@@ -492,6 +492,9 @@ $("cResend").onclick = async () => { await api({ action: "code", email: pendingE
 $("cOther").onclick = () => open("mEmail");
 $("pClub").onclick = () => open("mLogin");
 
+/* ── Google Analytics: tell the Odoo page what happened (no personal data) ── */
+function mzGA(name, params) { try { window.top.postMessage({ mz: "track", ga: { event: name, params: params || {} } }, "*"); } catch (e) {} }
+
 /* ── Paywall + waiting for Stripe ────────────────────────────── */
 let waitTimer = null, waitUntil = 0;
 function openPay(limitReached) {
@@ -504,14 +507,14 @@ function openPay(limitReached) {
   $("pWait").hidden = true;
   open("mPay");
 }
-$("payBtn").addEventListener("click", () => { $("pWait").hidden = false; startWaiting(); });
+$("payBtn").addEventListener("click", () => { mzGA("begin_checkout", { currency: "USD", value: 9, items: [{ item_id: "writing-sheets-lifetime", item_name: "Writing sheet maker (lifetime)", price: 9, quantity: 1 }] }); $("pWait").hidden = false; startWaiting(); });
 function startWaiting() {
   stopWaiting(); waitUntil = Date.now() + 20 * 60 * 1000;
   waitTimer = setInterval(async () => {
     if (Date.now() > waitUntil || !me) return stopWaiting();
     try {
       const res = await api({ action: "status", email: me.email, key: me.key, check: true });
-      if (res.plan && res.plan !== "free") { save(res, me.email); stopWaiting(); closeAll(); toast("Payment received. Unlimited is on ✨ 谢谢！"); }
+      if (res.plan && res.plan !== "free") { if (res.plan === "paid") mzGA("purchase", { transaction_id: "ws-" + (me.key || Date.now()), currency: "USD", value: 9, items: [{ item_id: "writing-sheets-lifetime", item_name: "Writing sheet maker (lifetime)", price: 9, quantity: 1 }] }); save(res, me.email); stopWaiting(); closeAll(); toast("Payment received. Unlimited is on ✨ 谢谢！"); }
     } catch (e) {}
   }, 5000);
 }
@@ -555,6 +558,7 @@ async function go(mode) {
       const a = document.createElement("a"); a.href = URL.createObjectURL(out.pdf.output("blob")); a.download = out.name;
       document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
     }
+    mzGA("writing_sheet_made", { plan: unlimited() ? "unlimited" : "free", pages: wantedChars().length });
     toast(unlimited() ? "Your sheet is ready ✨" : `Your sheet is ready · ${Math.max(0, FREE_LIMIT - me.used)} free left`);
   } catch (e) { toast("Something went wrong. Please try again."); }
   finally { btn.disabled = false; btn.textContent = label; }
@@ -570,6 +574,7 @@ $("printBtn").onclick = () => {
 
 /* ── Newsletter (same list as Start Here) ────────────────────── */
 function newsletter(email) {
+  mzGA("generate_lead", { lead_source: "writing-sheets" });
   try { fetch(NEWSLETTER_URL, { method: "POST", mode: "no-cors", keepalive: true, headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ email, source: "writing-sheets", timestamp: new Date().toISOString() }) }).catch(() => {}); } catch (e) {}
 }
 
